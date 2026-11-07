@@ -19,6 +19,7 @@ export const fetchNotes = async (
         include_adult: false,
         language: 'en-US',
         page: page,
+        perPage: 10
         },
       headers: {
         Authorization: `Bearer ${import.meta.env.VITE_NOTEHUB_TOKEN}`,
