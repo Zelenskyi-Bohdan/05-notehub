@@ -15,10 +15,8 @@ export const fetchNotes = async (
     `https://notehub-public.goit.study/api/notes`,
     {
       params: {
-        query: request,
-        include_adult: false,
-        language: 'en-US',
-        page: page,
+        search: request,
+        page,
         perPage: 10
         },
       headers: {

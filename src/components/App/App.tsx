@@ -56,9 +56,6 @@ function App() {
             {isSuccess && data.notes.length === 0 && (
                 <p>No notes found.</p>
             )}
-
-            {data?.notes && data?.notes.length !== 0 &&
-                <NoteList notes={data.notes}/>}
         </div>
     );
 }
