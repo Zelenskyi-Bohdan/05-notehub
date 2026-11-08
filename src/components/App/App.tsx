@@ -1,9 +1,9 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery, useMutation, keepPreviousData, useQueryClient } from '@tanstack/react-query';
 import { useDebouncedCallback } from 'use-debounce';
 import css from './App.module.css'
-import { fetchNotes, createNote } from '../../services/noteService.ts'; //   deleteNote
+import { fetchNotes, createNote, deleteNote } from '../../services/noteService.ts';
 import type { CreateNoteData } from '../../services/noteService.ts';
 import NoteList from '../NoteList/NoteList.tsx';
 import Pagination from '../Pagination/Pagination.tsx';
@@ -23,27 +23,41 @@ function App() {
     const { data, isError, isLoading, isSuccess } = useQuery({
         queryKey: ['notes', query, page],
         queryFn: () => fetchNotes(query, page),
-        enabled: true,
         placeholderData: keepPreviousData,
     });
-    
-    const mutation = useMutation({
+
+    const createMutation = useMutation({
         mutationFn: createNote,
         onSuccess: async () => {
+            setPage(1);
+            setIsModalOpen(false);
+
             await queryClient.invalidateQueries({
                 queryKey: ['notes']
             });
-
-            setIsModalOpen(false);
         },
     });
 
     const handleCreateNote = async (values: CreateNoteData) => {
     try {
-        await mutation.mutateAsync(values);
+        await createMutation.mutateAsync(values);
     } catch {
-        // Помилку обробляємо через createNoteMutation.isError
+        // 
     }
+    };
+
+    const deleteMutation = useMutation({
+        mutationFn: deleteNote,
+        onSuccess: async () => {
+            await queryClient.invalidateQueries({
+                queryKey: ['notes']
+            });
+        },
+    });
+
+    const handleDeleteNote = (id: string) => {
+        deleteMutation.reset();
+        deleteMutation.mutate(id);
     };
 
     const debouncedSearch = useDebouncedCallback((value: string) => {
@@ -70,7 +84,7 @@ function App() {
                 <button
                     className={css.button}
                     onClick={() => {
-                        mutation.reset();
+                        createMutation.reset();
                         setIsModalOpen(true);
                     }}
                 >Create note +</button>
@@ -82,7 +96,7 @@ function App() {
                         onCancel={() => setIsModalOpen(false)}
                     />
 
-                    {mutation.isError && (
+                    {createMutation.isError && (
                         <p className={css.error}>
                             Failed to create note. Please try again.
                         </p>
@@ -96,7 +110,17 @@ function App() {
             {isError && <p>Something went wrong!</p>}
 
             {isSuccess && data.notes.length > 0 && (
-                <NoteList notes={data.notes} />
+                <NoteList
+                    notes={data.notes}
+                    onDelete={handleDeleteNote}
+                    isDeleting={deleteMutation.isPending}
+                />
+            )}
+            
+            {deleteMutation.isError && (
+                <p className={css.error}>
+                    Failed to delete note. Please try again.
+                </p>
             )}
 
             {isSuccess && data.notes.length === 0 && (
