@@ -1,27 +1,20 @@
 
 import { useState } from 'react';
-import type { ComponentType } from 'react';
 import { useQuery, keepPreviousData } from '@tanstack/react-query';
-import ReactPaginateModule from "react-paginate";
-import type { ReactPaginateProps } from "react-paginate";
 import css from './App.module.css'
-import { fetchNotes } from '../../services/noteService.ts';
+import { fetchNotes } from '../../services/noteService.ts'; // createNote   deleteNote
 import NoteList from '../NoteList/NoteList.tsx';
+import Pagination from '../Pagination/Pagination.tsx';
 
-type ModuleWithDefault<T> = { default: T };
-
-const ReactPaginate = (
-  ReactPaginateModule as unknown as ModuleWithDefault<ComponentType<ReactPaginateProps>>
-).default;
 
 function App() {
-    const [query,] = useState<string>("example");
+    const [query,] = useState<string>("");
     const [page, setPage] = useState(1);
 
     const { data, isError, isLoading, isSuccess } = useQuery({
         queryKey: ['notes', query, page],
         queryFn: () => fetchNotes(query!, page),
-        enabled: query !== "",
+        enabled: query !== null,
         placeholderData: keepPreviousData,
     });
 
@@ -29,20 +22,14 @@ function App() {
         <div className={css.app}>
             <header className={css.toolbar}>
                 {/* Компонент SearchBox */}
-                {data?.notes && data.total_pages > 1 &&
-                    <ReactPaginate
-                        pageCount={data.total_pages}
-                        pageRangeDisplayed={5}
-                        marginPagesDisplayed={1}
-                        onPageChange={({ selected }) => setPage(selected + 1)}
-                        forcePage={page  - 1}
-                        containerClassName={css.pagination}
-                        activeClassName={css.active}
-                        nextLabel="→"
-                        previousLabel="←"
-                    />
+                {data?.notes && data.totalPages > 1 &&
+                    <Pagination
+                        totalPages={data.totalPages}
+                        onPageChange={setPage}
+                        currentPage={page}
+                />
                 }
-                {/* Кнопка створення нотатки */}
+                <button className={css.button}>Create note +</button>
             </header>
 
             {isLoading && <p>Loading...</p>}

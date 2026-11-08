@@ -1,10 +1,16 @@
 import axios from 'axios';
-import type Note from '../types/note.ts';
+import type { Note, NoteTag } from '../types/note.ts';
 
 interface NoteResponse {
     page: number;
     notes: Note[];
-    total_pages: number;
+    totalPages: number;
+}
+
+interface CreateNoteData {
+    title: string;
+    content: string;
+    tag: NoteTag;
 }
 
 export const fetchNotes = async (
@@ -17,7 +23,7 @@ export const fetchNotes = async (
       params: {
         search: request,
         page,
-        perPage: 10
+        perPage: 12
         },
       headers: {
         Authorization: `Bearer ${import.meta.env.VITE_NOTEHUB_TOKEN}`,
@@ -26,4 +32,35 @@ export const fetchNotes = async (
   );
 
   return response.data;
+};
+
+export const createNote = async (
+    note: CreateNoteData
+): Promise<Note> => {
+    const response = await axios.post<Note>(
+        'https://notehub-public.goit.study/api/notes',
+        note,
+        {
+            headers: {
+                Authorization: `Bearer ${import.meta.env.VITE_NOTEHUB_TOKEN}`,
+            },
+        }
+    );
+
+    return response.data;
+};
+
+export const deleteNote = async (
+    id: string
+): Promise<Note> => {
+    const response = await axios.delete<Note>(
+        `https://notehub-public.goit.study/api/notes/${id}`,
+        {
+            headers: {
+                Authorization: `Bearer ${import.meta.env.VITE_NOTEHUB_TOKEN}`,
+            },
+        }
+    );
+
+    return response.data;
 };
