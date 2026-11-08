@@ -1,14 +1,31 @@
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { deleteNote } from '../../services/noteService';
 import css from './NoteList.module.css';
 import type { Note } from '../../types/note.ts';
 
-interface NoteListProp {
+interface NoteListProps {
     notes: Note[];
-    onDelete: (id: string) => void;
-    isDeleting: boolean;
 }
 
-export default function NoteList({ notes, onDelete, isDeleting }: NoteListProp) {
+export default function NoteList({ notes }: NoteListProps) {
+    const queryClient = useQueryClient();
+
+    const deleteMutation = useMutation({
+        mutationFn: deleteNote,
+
+        onSuccess: async () => {
+            await queryClient.invalidateQueries({
+                queryKey: ['notes'],
+            });
+        },
+    });
+
+    const handleDelete = (id: string) => {
+        deleteMutation.mutate(id);
+    };
+
     return (
+        <>
         <ul className={css.list}>
             {notes.map(({ id, title, content, tag }) => (
                 <li className={css.listItem} key={id}>
@@ -19,14 +36,21 @@ export default function NoteList({ notes, onDelete, isDeleting }: NoteListProp) 
                         <span className={css.tag}>{tag}</span>
                         <button
                             className={css.button}
-                            disabled={isDeleting}
-                            onClick={() => onDelete(id)}
+                            disabled={deleteMutation.isPending}
+                            onClick={() => handleDelete(id)}
                         >
-                            Delete
+                            {deleteMutation.isPending ? 'Deleting...' : 'Delete'}
                         </button>
                     </div>
                 </li>
             ))}
         </ul>
+
+        {deleteMutation.isError && (
+            <p className={css.error}>
+                Failed to delete note. Please try again.
+            </p>
+        )}
+    </>
     );
 }
